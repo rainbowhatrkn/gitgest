@@ -34,11 +34,14 @@ def update_tags():
 
 # Interface graphique principale
 def create_gui():
+    global repo_var, branch_var, tag_var, output_text, branch_menu, tag_menu  # Déclarez les variables globales ici
+
     root = tk.Tk()
     root.title("Git Command Center")
     root.configure(bg="#1C1C1C")
+    root.geometry("800x600")
 
-    # Style des widgets
+    # Ajout de bordures colorées et de styles personnalisés pour les fenêtres et les polices
     style = ttk.Style()
     style.theme_use('clam')
     style.configure("TButton", font=("Courier", 12, "bold"), background="#00FF00", foreground="black")
@@ -46,14 +49,15 @@ def create_gui():
     style.configure("TFrame", background="#1C1C1C", borderwidth=2, relief="groove")
     style.configure("TCombobox", selectbackground="#00FF00", fieldbackground="#1C1C1C", background="#00FF00", foreground="black")
     style.map('TButton', background=[('active', '#00AA00')])
+    style.configure("TNotebook", background="#1C1C1C", borderwidth=2)
+    style.configure("TNotebook.Tab", background="#1C1C1C", foreground="#00FF00", padding=[10, 5])
 
     # Variables pour les sélections
-    global repo_var, branch_var, tag_var
     repo_var = tk.StringVar()
     branch_var = tk.StringVar()
     tag_var = tk.StringVar()
 
-    # Frame principale
+    # Cadre principal avec bordure colorée
     main_frame = ttk.Frame(root)
     main_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
 
@@ -66,18 +70,15 @@ def create_gui():
 
     # Liste des branches disponibles
     ttk.Label(main_frame, text="Select Branch:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
-    global branch_menu
     branch_menu = ttk.Combobox(main_frame, textvariable=branch_var, values=[], state="readonly")
     branch_menu.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
 
     # Liste des tags disponibles
     ttk.Label(main_frame, text="Select Tag:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
-    global tag_menu
     tag_menu = ttk.Combobox(main_frame, textvariable=tag_var, values=[], state="readonly")
     tag_menu.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
 
     # Zone de texte pour afficher les résultats
-    global output_text
     output_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, bg="#000000", fg="#00FF00", font=("Courier", 10), insertbackground="#00FF00", borderwidth=2, relief="sunken")
     output_text.grid(row=3, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
 
@@ -121,11 +122,7 @@ def create_gui():
     root.grid_columnconfigure(0, weight=1)
     root.grid_rowconfigure(0, weight=1)
     main_frame.grid_columnconfigure(1, weight=1)
-    main_frame.grid_rowconfigure(3, weight=1)  # Zone de texte s'étend bien
-
-    # Assurez-vous que la zone de texte prend tout l'espace disponible verticalement
-    main_frame.grid_rowconfigure(4, weight=1)
-    output_text.grid(row=3, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
+    main_frame.grid_rowconfigure(3, weight=1)
     button_frame.grid_columnconfigure(0, weight=1)
     button_frame.grid_columnconfigure(1, weight=1)
 
