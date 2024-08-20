@@ -97,7 +97,7 @@ def create_gui():
         "Reset Hard": "git reset --hard HEAD",
         "Clone Repo": lambda: f"git clone {repo_var.get()}",
         "Pull": "git pull origin master",
-        "Push": lambda: f"git push --set-upstream origin {branch_var.get()}",
+        "Push": lambda: f"git push --set-upstream origin main",
         "Stash": "git stash",
         "Apply Stash": "git stash apply",
         "Create Tag": lambda: f"git tag {tag_var.get()}",
