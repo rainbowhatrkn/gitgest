@@ -1,133 +1,150 @@
-import tkinter as tk
-from tkinter import scrolledtext, filedialog, ttk
+import pygame
+import sys
 import subprocess
-import os
+from pygame.locals import QUIT, MOUSEBUTTONDOWN, VIDEORESIZE, KEYDOWN
 
-# Fonction pour exécuter les commandes Git
+# Initialisation de Pygame
+pygame.init()
+
+# Définir les couleurs
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+WHITE = (255, 255, 255)
+DARK_GREY = (40, 40, 40)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
+ORANGE = (255, 165, 0)
+PURPLE = (128, 0, 128)
+# Dimensions initiales de la fenêtre
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 600
+WINDOW_SIZE = (WINDOW_WIDTH, WINDOW_HEIGHT)
+
+# Configuration de la fenêtre
+screen = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)
+pygame.display.set_caption("Git Command Center")
+
+# Fontes
+font = pygame.font.SysFont('Courier', 24)
+small_font = pygame.font.SysFont('Courier', 18)
+
+# Fonction pour dessiner les boutons
+def draw_button(surface, text, rect, color):
+    pygame.draw.rect(surface, color, rect)
+    text_surface = font.render(text, True, BLACK)
+    surface.blit(text_surface, (rect.x + 10, rect.y + 10))
+
+# Fonction pour dessiner une zone de texte
+def draw_text_box(surface, text, rect):
+    pygame.draw.rect(surface, WHITE, rect, 2)
+    text_surface = font.render(text, True, WHITE)
+    surface.blit(text_surface, (rect.x + 5, rect.y + 5))
+
+# Fonction pour exécuter des commandes Git et afficher la sortie
 def run_git_command(command):
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True, check=True)
-        output_text.insert(tk.END, f"$ {command}\n{result.stdout}\n")
+        return result.stdout
     except subprocess.CalledProcessError as e:
-        output_text.insert(tk.END, f"$ {command}\n{e.stderr}\n")
+        return e.stderr
 
-# Fonction pour sélectionner un répertoire contenant un dépôt Git
-def select_repository():
-    selected_repo = filedialog.askdirectory()
-    if selected_repo:
-        repo_var.set(selected_repo)
-        os.chdir(selected_repo)
-        update_branches()
-        update_tags()
+# Fonction pour gérer les clics sur les boutons
+def handle_button_click(position, rects):
+    for i, rect in enumerate(rects):
+        if rect.collidepoint(position):
+            return i
+    return None
 
-# Fonction pour mettre à jour les branches disponibles dans le dépôt sélectionné
-def update_branches():
-    result = subprocess.run("git branch -a", shell=True, capture_output=True, text=True)
-    branches = [branch.strip().replace("* ", "") for branch in result.stdout.splitlines()]
-    branch_menu['values'] = branches
+# Configuration des boutons et autres éléments
+button_rects = [
+    pygame.Rect(50, 50, 200, 50),
+    pygame.Rect(50, 120, 200, 50),
+    pygame.Rect(50, 190, 200, 50),
+    pygame.Rect(50, 260, 200, 50),
+    pygame.Rect(300, 50, 200, 50),
+    pygame.Rect(300, 120, 200, 50),
+    pygame.Rect(300, 190, 200, 50),
+    pygame.Rect(300, 260, 200, 50)
+]
 
-# Fonction pour mettre à jour les tags disponibles dans le dépôt sélectionné
-def update_tags():
-    result = subprocess.run("git tag", shell=True, capture_output=True, text=True)
-    tags = [tag.strip() for tag in result.stdout.splitlines()]
-    tag_menu['values'] = tags
+button_labels = [
+    "Init Repo",
+    "Add All",
+    "Commit",
+    "Status",
+    "Push",
+    "Pull",
+    "Create Tag",
+    "View Diff"
+]
 
-# Interface graphique principale
-def create_gui():
-    global repo_var, branch_var, tag_var, output_text, branch_menu, tag_menu  # Déclarez les variables globales ici
+button_colors = [
+    GREEN,
+    GREEN,
+    ORANGE,
+    BLUE,
+    GREEN,
+    PURPLE,
+    GREEN,
+    BLUE
+]
 
-    root = tk.Tk()
-    root.title("Git Command Center")
-    root.configure(bg="#1C1C1C")
-    root.geometry("800x600")
+# Zone de texte pour afficher les résultats
+output_rect = pygame.Rect(50, 330, 750, 200)
+input_rect = pygame.Rect(50, 540, 700, 60)
+input_text = f'GIT OUTPUT CMD'
 
-    # Ajout de bordures colorées et de styles personnalisés pour les fenêtres et les polices
-    style = ttk.Style()
-    style.theme_use('clam')
-    style.configure("TButton", font=("Courier", 12, "bold"), background="#00FF00", foreground="black")
-    style.configure("TLabel", font=("Courier", 10, "bold"), background="#1C1C1C", foreground="#00FF00")
-    style.configure("TFrame", background="#1C1C1C", borderwidth=2, relief="groove")
-    style.configure("TCombobox", selectbackground="#00FF00", fieldbackground="#1C1C1C", background="#00FF00", foreground="black")
-    style.map('TButton', background=[('active', '#00AA00')])
-    style.configure("TNotebook", background="#1C1C1C", borderwidth=2)
-    style.configure("TNotebook.Tab", background="#1C1C1C", foreground="#00FF00", padding=[10, 5])
+# Commandes Git associées à chaque bouton
+commands = [
+    "git init",
+    "git add --all",
+    "git commit -m 'Initial commit'",
+    "git status",
+    "git push --set-upstream origin main",
+    "git pull origin master",
+    "git tag",
+    "git diff"
+]
 
-    # Variables pour les sélections
-    repo_var = tk.StringVar()
-    branch_var = tk.StringVar()
-    tag_var = tk.StringVar()
+# Boucle principale
+running = True
+output_text = ""
+while running:
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+        elif event.type == MOUSEBUTTONDOWN:
+            position = pygame.mouse.get_pos()
+            button_index = handle_button_click(position, button_rects)
+            if button_index is not None:
+                # Exécuter la commande Git associée au bouton cliqué
+                output_text = run_git_command(commands[button_index])
+        elif event.type == VIDEORESIZE:
+            WINDOW_SIZE = event.size
+            screen = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)
+        elif event.type == KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                # Afficher le texte entré comme une commande (par exemple)
+                output_text = run_git_command(input_text)
+                input_text = ""
+            elif event.key == pygame.K_BACKSPACE:
+                input_text = input_text[:-1]
+            else:
+                input_text += event.unicode
 
-    # Cadre principal avec bordure colorée
-    main_frame = ttk.Frame(root)
-    main_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+    # Remplir l'écran avec une couleur de fond
+    screen.fill(DARK_GREY)
 
-    # Gestionnaire de fichiers pour sélectionner le dépôt
-    ttk.Label(main_frame, text="Select Repository:").grid(row=0, column=0, sticky="w", padx=10, pady=5)
-    repo_entry = ttk.Entry(main_frame, textvariable=repo_var, width=50)
-    repo_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
-    browse_button = ttk.Button(main_frame, text="Browse", command=select_repository)
-    browse_button.grid(row=0, column=2, padx=10, pady=5, sticky="ew")
+    # Dessiner les boutons
+    for rect, label, color in zip(button_rects, button_labels, button_colors):
+        draw_button(screen, label, rect, color)
 
-    # Liste des branches disponibles
-    ttk.Label(main_frame, text="Select Branch:").grid(row=1, column=0, sticky="w", padx=10, pady=5)
-    branch_menu = ttk.Combobox(main_frame, textvariable=branch_var, values=[], state="readonly")
-    branch_menu.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
+    # Dessiner la zone de texte pour les résultats
+    draw_text_box(screen, output_text, output_rect)
 
-    # Liste des tags disponibles
-    ttk.Label(main_frame, text="Select Tag:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
-    tag_menu = ttk.Combobox(main_frame, textvariable=tag_var, values=[], state="readonly")
-    tag_menu.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
+    # Dessiner la zone de texte d'entrée
+    draw_text_box(screen, input_text, input_rect)
 
-    # Zone de texte pour afficher les résultats
-    output_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, bg="#000000", fg="#00FF00", font=("Courier", 10), insertbackground="#00FF00", borderwidth=2, relief="sunken")
-    output_text.grid(row=3, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
-
-    # Frame pour les boutons
-    button_frame = ttk.Frame(main_frame)
-    button_frame.grid(row=4, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
-
-    # Commandes Git adaptées à l'interface
-    commands = {
-        "Init Repository": "git init",
-        "Add All": "git add --all",
-        "Commit": "git commit -m 'Initial commit'",
-        "Status": "git status",
-        "Log": "git log",
-        "Checkout Branch": lambda: f"git checkout {branch_var.get()}",
-        "Merge Branch": lambda: f"git merge {branch_var.get()}",
-        "Reset Hard": "git reset --hard HEAD",
-        "Clone Repo": lambda: f"git clone {repo_var.get()}",
-        "Pull": "git pull origin master",
-        "Push": lambda: f"git push --set-upstream origin main",
-        "Stash": "git stash",
-        "Apply Stash": "git stash apply",
-        "Create Tag": lambda: f"git tag {tag_var.get()}",
-        "View Diff": "git diff",
-        "Delete Branch": lambda: f"git branch -d {branch_var.get()}",
-        "Add Remote": lambda: f"git remote add origin {repo_var.get()}",
-        "Remove Remote": lambda: f"git remote remove origin"
-    }
-
-    # Création des boutons pour chaque commande Git
-    for i, (label, command) in enumerate(commands.items()):
-        def on_button_click(cmd=command):
-            if callable(cmd):
-                cmd = cmd()
-            run_git_command(cmd)
-
-        btn = ttk.Button(button_frame, text=label, command=on_button_click)
-        btn.grid(row=i//2, column=i%2, padx=5, pady=5, sticky="ew")
-
-    # Configuration du redimensionnement
-    root.grid_columnconfigure(0, weight=1)
-    root.grid_rowconfigure(0, weight=1)
-    main_frame.grid_columnconfigure(1, weight=1)
-    main_frame.grid_rowconfigure(3, weight=1)
-    button_frame.grid_columnconfigure(0, weight=1)
-    button_frame.grid_columnconfigure(1, weight=1)
-
-    # Lancement de l'interface
-    root.mainloop()
-
-if __name__ == "__main__":
-    create_gui()
+    # Mettre à jour l'affichage
+    pygame.display.flip()
